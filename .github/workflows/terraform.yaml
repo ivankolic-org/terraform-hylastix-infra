@@ -20,6 +20,7 @@ on:
 
 # Add a workflow-level env block for common secrets and variables
 env:
+  WORKFLOW_NAME: ${{ github.workflow }} - ${{ github.event_name }} - ${{ github.ref_name }}
   ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
   ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
