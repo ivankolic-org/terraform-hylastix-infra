@@ -1,0 +1,5 @@
+env.sh
+.terraform 
+.terraform.lock.hcl
+github-ansible
+github-ansible.pub
