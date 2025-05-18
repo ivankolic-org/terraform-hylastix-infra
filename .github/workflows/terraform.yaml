@@ -18,17 +18,18 @@ on:
       - 'feature/**' # Trigger on push to branches like feature/new-thing
       - 'master'       # Trigger plan (and then manual apply) on push to master
 
+# Add a workflow-level env block for common secrets and variables
+env:
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  TF_VAR_vm_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
 jobs:
   validate_on_feature_push:
     name: Validate on Feature Branch Push
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') # Only run for push to feature/*
-    env: # Define common environment variables for Azure auth for this job, if init needs them
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -48,12 +49,6 @@ jobs:
     name: Manual Terraform Actions (Development Env)
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' # Only run this job for manual dispatch
-    env: # Define common environment variables for Azure auth for this job
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -93,12 +88,8 @@ jobs:
     name: Plan for Master Branch
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    env:
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
+    env: # Add TF_LOG for debugging this specific job; other env vars inherited
+      TF_LOG: DEBUG
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -119,16 +110,11 @@ jobs:
           path: tfplan-master
           retention-days: 7
 
-  destroy_plan_for_master:
-    name: Show Destroy Plan for Master Branch
+  create_destroy_plan_for_master: # Renamed from destroy_plan_for_master
+    name: Create and Upload Destroy Plan for Master # Renamed for clarity
     runs-on: ubuntu-latest
+    # Condition remains to trigger on 'destroy' action for master, sequenced by 'needs' in apply job
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
-    env:
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -140,22 +126,22 @@ jobs:
         run: terraform init
       - name: Terraform Destroy Plan
         run: terraform plan -destroy -out=tfdestroyplan-master
+      - name: Upload Terraform Destroy Plan for Master # New step
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfdestroyplan-master-artifact
+          path: tfdestroyplan-master
+          retention-days: 7
       - name: Show Destroy Plan
         run: terraform show -no-color tfdestroyplan-master
 
   apply_for_master:
     name: Apply for Master Branch (Requires Approval)
     runs-on: ubuntu-latest
-    needs: [plan_for_master] # Ensures this job runs after plan_for_master and destroy_plan_for_master
+    needs: [plan_for_master] # Ensures this job runs after plan_for_master
     if: github.event_name == 'push' && github.ref == 'refs/heads/master' # Ensures it only runs for master pushes
     environment:
       name: production
-    env:
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -177,15 +163,10 @@ jobs:
   destroy_apply_for_master:
     name: Destroy Apply for Master Branch (Requires Approval)
     runs-on: ubuntu-latest
+    needs: [create_destroy_plan_for_master] # Added dependency and uses new job name
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
     environment:
       name: production
-    env:
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -195,10 +176,10 @@ jobs:
           terraform_version: 1.7.5
       - name: Terraform Init
         run: terraform init
-      - name: Download Destroy Plan for Master
-        if: always()
-        run: |
-          if [ -f tfdestroyplan-master ]; then echo "Destroy plan already present."; else echo "No destroy plan found, please run destroy plan first." && exit 1; fi
+      - name: Download Destroy Plan for Master # Modified step to use download-artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfdestroyplan-master-artifact
       - name: Show Destroy Plan
         run: terraform show -no-color tfdestroyplan-master
       - name: Terraform Destroy Apply
