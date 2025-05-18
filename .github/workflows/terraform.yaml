@@ -28,6 +28,7 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -52,6 +53,7 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -96,6 +98,7 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -125,6 +128,7 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -151,6 +155,7 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -180,6 +185,7 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      TF_VAR_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
