@@ -39,6 +39,7 @@ resource "azurerm_public_ip" "main" {
   name                = "pip-hylastix"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
+  domain_name_label   = "hylastix-test"
   allocation_method   = "Static"
   sku                 = "Basic"
 }
