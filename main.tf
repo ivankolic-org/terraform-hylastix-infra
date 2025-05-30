@@ -23,13 +23,37 @@ resource "azurerm_network_security_group" "main" {
   resource_group_name = azurerm_resource_group.main.name
 
   security_rule {
-    name                       = "Allow-SSH"
-    priority                   = 1001
+      name                       = "Allow-SSH"
+      priority                   = 1001
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "22"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
+
+  security_rule {
+    name                       = "Allow-HTTP"
+    priority                   = 1002
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
-    destination_port_range     = "22"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "Allow-HTTPS-443"
+    priority                   = 1004
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
@@ -66,7 +90,7 @@ resource "azurerm_linux_virtual_machine" "main" {
   name                            = var.vm_name
   location                        = var.location
   resource_group_name             = azurerm_resource_group.main.name
-  size                            = "Standard_B1s"
+  size                            = "Standard_B2s"
   network_interface_ids           = [azurerm_network_interface.main.id]
   admin_username                  = var.admin_username
   disable_password_authentication = true

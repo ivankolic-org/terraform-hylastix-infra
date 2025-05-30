@@ -26,11 +26,14 @@ env:
   ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
   ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
   TF_VAR_vm_ssh_public_key: ${{ secrets.TF_VM_SSH_PUBLIC_KEY }}
+
 jobs:
   validate_on_feature_push:
     name: Validate on Feature Branch Push
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') # Only run for push to feature/*
+    env:
+      WORKFLOW_NAME: ${{ github.workflow }} - ${{ github.event_name }} - ${{ github.ref_name }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -45,11 +48,13 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate
-        
+
   terraform_manual_actions_dev: # Renamed for clarity
     name: Manual Terraform Actions (Development Env)
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' # Only run this job for manual dispatch
+    env:
+      WORKFLOW_NAME: ${{ github.workflow }} - ${{ github.event_name }} - ${{ github.ref_name }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -89,8 +94,8 @@ jobs:
     name: Plan for Master Branch
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    env: # Add TF_LOG for debugging this specific job; other env vars inherited
-      TF_LOG: DEBUG
+    env:
+      WORKFLOW_NAME: ${{ github.workflow }} - ${{ github.event_name }} - ${{ github.ref_name }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -116,6 +121,8 @@ jobs:
     runs-on: ubuntu-latest
     # Condition remains to trigger on 'destroy' action for master, sequenced by 'needs' in apply job
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+    env:
+      WORKFLOW_NAME: ${{ github.workflow }} - ${{ github.event_name }} - ${{ github.ref_name }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -143,6 +150,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master' # Ensures it only runs for master pushes
     environment:
       name: production
+    env:
+      WORKFLOW_NAME: ${{ github.workflow }} - ${{ github.event_name }} - ${{ github.ref_name }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -168,6 +177,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
     environment:
       name: production
+    env:
+      WORKFLOW_NAME: ${{ github.workflow }} - ${{ github.event_name }} - ${{ github.ref_name }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
